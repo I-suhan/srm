@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>登录设备管理</title>
+
+
+    <style>
+
+        body{
+
+            font-family:
+                    "Microsoft YaHei",
+                    sans-serif;
+
+            background:#f5f6fa;
+
+        }
+
+
+        .container{
+
+            width:900px;
+
+            margin:40px auto;
+
+        }
+
+
+        .card{
+
+            background:white;
+
+            padding:20px;
+
+            margin-bottom:15px;
+
+            border-radius:8px;
+
+            box-shadow:
+                    0 2px 8px rgba(0,0,0,.08);
+
+        }
+
+
+        .title{
+
+            font-size:22px;
+
+            margin-bottom:20px;
+
+        }
+
+
+        .item{
+
+            line-height:30px;
+
+        }
+
+
+        button{
+
+            background:#e74c3c;
+
+            color:white;
+
+            border:0;
+
+            padding:8px 15px;
+
+            border-radius:5px;
+
+            cursor:pointer;
+
+        }
+
+
+        button:hover{
+
+            opacity:.8;
+
+        }
+
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+    <div class="title">
+
+        登录设备
+
+    </div>
+
+
+
+    <div id="deviceList">
+
+
+        加载中...
+
+    </div>
+
+
+</div>
+
+
+
+
+
+<script>
+    async function loadDevices(){
+
+
+
+        const res =
+            await fetch(
+                "/auth/devices",
+                {
+
+                    headers:{
+
+                        "Authorization":
+                            "Bearer "+token
+
+                    }
+
+                }
+            );
+
+
+
+        if(res.status===401){
+
+            localStorage.removeItem(
+                "access_token"
+            );
+
+            location.href="/login";
+
+            return;
+
+        }
+
+
+
+        const data =
+            await res.json();
+
+
+
+        render(data);
+
+
+    }
+
+
+
+
+
+    function render(list){
+
+
+        const box =
+            document.getElementById(
+                "deviceList"
+            );
+
+
+
+        box.innerHTML="";
+
+
+
+        list.forEach(device=>{
+
+
+            box.innerHTML += `
+
+        <div class="card">
+
+
+            <div class="item">
+
+            设备:
+            ${device.deviceName || "-"}
+
+            </div>
+
+
+
+            <div class="item">
+
+            系统:
+            ${device.os || "-"}
+
+            </div>
+
+
+
+            <div class="item">
+
+            IPv4:
+            ${device.ipv4 || "-"}
+
+            </div>
+
+
+
+            <div class="item">
+
+            IPv6:
+            ${device.ipv6 || "-"}
+
+            </div>
+
+
+
+            <div class="item">
+
+            浏览器:
+            ${device.userAgent || "-"}
+
+            </div>
+
+
+
+            <div class="item">
+
+            最后登录:
+
+            ${device.lastTime || "-"}
+
+            </div>
+
+
+
+            <br>
+
+
+
+            <button
+            onclick="
+            deleteDevice(${device.id})
+            ">
+
+            删除设备
+
+            </button>
+
+
+        </div>
+
+
+        `;
+
+
+        });
+
+
+    }
+
+
+
+
+
+    async function deleteDevice(id){
+
+
+
+        const res =
+            await fetch(
+                "/auth/device/"+id,
+                {
+
+                    method:"DELETE",
+
+                    headers:{
+
+                        "Authorization":
+                            "Bearer "+token
+
+                    }
+
+                }
+            );
+
+
+
+        if(res.status===401){
+
+            localStorage.removeItem(
+                "access_token"
+            );
+
+            location.href="/login";
+
+            return;
+
+        }
+
+
+
+        loadDevices();
+
+
+    }
+
+
+
+
+
+    loadDevices();
+
+
+</script>
+
+
+</body>
+
+</html>

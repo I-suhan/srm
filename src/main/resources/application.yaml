@@ -1,0 +1,25 @@
+security:
+  # cookie 或 header
+  token-mode: header
+
+  cookie:
+    same-site: Strict
+    secure: false
+  jwt:
+    secret-key: auth-framework-secret-key-2026-demo
+    # access存活时间60分钟，死亡前十分钟刷新 refresh存活时间7天，死亡前5小时刷新
+    access-expire: 3600000
+    access-remain-time: 300000
+    refresh-expire: 604800000
+    refresh-remain-time: 18000000
+    lock-timeout: 5s          # 分布式锁持有时间（秒）
+    result-cache-ttl: 40m      # 新 Token 缓存过期时间（分钟）
+    spin-wait-max: 10         # 未获得锁时的最大自旋次数（每次等待100ms）
+    spin-wait-interval: 100ms # 每次自旋等待间隔（毫秒）
+    session-expire: 7776000000 # 90天
+    session-timeout: 2592000000
+
+redis:
+  prefix: srm
+  trusted-packages:
+    com.ne.srm

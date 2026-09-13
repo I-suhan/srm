@@ -1,0 +1,62 @@
+[versions]
+spring-boot = "3.5.12"
+spring-dependency-management = "1.1.7"
+java = "17"
+
+tika = "3.3.0"
+poi = "5.4.1"
+
+# ===== libraries =====
+[libraries]
+
+# zxing 条码识别
+zxing-javase = { group = "com.google.zxing", name = "javase", version = "3.5.3" }
+
+# Apache Tika 文档识别
+tika-core = { group = "org.apache.tika", name = "tika-core", version.ref = "tika" }
+tika-parsers = { group = "org.apache.tika", name = "tika-parsers-standard-package", version.ref = "tika" }
+
+# Apache POI
+poi = { group = "org.apache.poi", name = "poi", version.ref = "poi" }
+poi-ooxml = { group = "org.apache.poi", name = "poi-ooxml", version.ref = "poi" }
+poi-pdfbox = { group = "org.apache.pdfbox", name = "pdfbox", version = "3.0.7" }
+
+# Spring Boot starters（版本由 plugin/BOM 控制，不写 version）
+spring-boot-web = { group = "org.springframework.boot", name = "spring-boot-starter-web" }
+spring-boot-security = { group = "org.springframework.boot", name = "spring-boot-starter-security"}
+spring-boot-thymeleaf = { group = "org.springframework.boot", name = "spring-boot-starter-thymeleaf" }
+spring-boot-jpa = { group = "org.springframework.boot", name = "spring-boot-starter-data-jpa" }
+spring-boot-jackson = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310"}
+spring-boot-validation = { group = "org.springframework.boot", name = "spring-boot-starter-validation" }
+spring-boot-test = { group = "org.springframework.boot", name = "spring-boot-starter-test" }
+
+# jwt
+jjwt-api = {group = "io.jsonwebtoken", name = "jjwt-api", version = "0.13.0"}
+jjwt-impl = {group = "io.jsonwebtoken", name = "jjwt-impl", version = "0.13.0"}
+jjwt-json = {group = "io.jsonwebtoken", name = "jjwt-jackson", version = "0.13.0"}
+
+# MySQL
+mysql = { group = "com.mysql", name = "mysql-connector-j" }
+
+# redis
+redis = { group = "org.springframework.boot", name = "spring-boot-starter-data-redis"}
+pool = {group = "org.apache.commons", name = "commons-pool2"}
+
+# Lombok
+lombok = { group = "org.projectlombok", name = "lombok" }
+
+# hutool
+hutool = { group = "cn.hutool", name = "hutool-all",version = "5.8.47" }
+
+# UUID
+uuid-creator = { group = "com.github.f4b6a3", name = "uuid-creator", version = "6.1.1"}
+
+# Devtools
+spring-boot-devtools = { group = "org.springframework.boot", name = "spring-boot-devtools" }
+
+
+# ===== plugins =====
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+java = { id = "java" }

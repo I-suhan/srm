@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>登录</title>
+
+    <link rel="stylesheet"
+          href="/css/style.css">
+
+</head>
+
+
+<body>
+
+
+<div class="card">
+    <input type="hidden" id="deviceName">
+
+
+    <h2 class="title">
+        用户登录
+    </h2>
+
+
+
+    <input
+            class="input"
+            id="username"
+            placeholder="用户名">
+
+
+
+    <input
+            class="input"
+            type="password"
+            id="password"
+            placeholder="密码">
+
+
+
+    <button
+            class="btn"
+            onclick="login()">
+
+        登录
+
+    </button>
+
+
+    <div class="link">
+
+        <a href="/register">
+            注册账号
+        </a>
+
+    </div>
+
+
+    <p id="msg"></p>
+
+
+</div>
+
+
+
+<script src="/js/auth.js"></script>
+
+<script>
+
+    // ================================
+    // 初始化设备信息
+    // ================================
+    window.onload = function () {
+
+        const device =
+            navigator.userAgent;
+
+        let name = "Unknown";
+
+        if (device.includes("Windows")) {
+            name = "Chrome-Windows";
+        }
+        else if (device.includes("iPhone")) {
+            name = "iPhone";
+        }
+        else if (device.includes("Android")) {
+            name = "Android";
+        }
+
+        document.getElementById(
+            "deviceName"
+        ).value = name;
+    };
+
+
+    // ================================
+    // 登录
+    // ================================
+    function login() {
+
+        const username =
+            document.getElementById("username").value.trim();
+
+        const password =
+            document.getElementById("password").value;
+
+        const deviceName =
+            document.getElementById("deviceName").value;
+
+
+        if (!username) {
+            alert("请输入用户名");
+            return;
+        }
+
+        if (!password) {
+            alert("请输入密码");
+            return;
+        }
+
+
+        fetch("/auth/login", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+                username: username,
+
+                password: password,
+
+                deviceId: getDeviceId(),
+
+                deviceName: deviceName,
+
+                os: getOs()
+
+            })
+
+        })
+            .then(res => {
+
+                return res.json().then(data => {
+
+                    return {
+                        ok: res.ok,
+                        data: data
+                    };
+
+                });
+
+            })
+            .then(result => {
+
+                console.log("登录完整返回:", result);
+
+                const response = result.data;
+
+                console.log("服务器JSON:", response);
+
+                console.log(
+                    "Access Token:",
+                    response.data?.access_token
+                );
+
+
+                if (!result.ok) {
+
+                    throw new Error(
+                        response.message || "登录失败"
+                    );
+
+                }
+
+
+                if (response.code !== 200) {
+
+                    throw new Error(
+                        response.message || "登录失败"
+                    );
+
+                }
+
+
+                // 这里才是正确的 Token
+                const accessToken =
+                    response.data?.access_token;
+
+
+                if (!accessToken) {
+
+                    throw new Error(
+                        "登录成功，但服务器没有返回 Token"
+                    );
+
+                }
+
+
+                // 保存 JWT
+                localStorage.setItem(
+                    "token",
+                    accessToken
+                );
+
+
+                console.log(
+                    "Token 已保存:",
+                    localStorage.getItem("token")
+                );
+
+
+                location.href = "/";
+
+            })
+            .catch(error => {
+
+                console.error(
+                    "登录错误:",
+                    error
+                );
+
+                alert(
+                    error.message || "登录失败"
+                );
+
+            });
+    }
+
+</script>
+
+
+</body>
+
+</html>

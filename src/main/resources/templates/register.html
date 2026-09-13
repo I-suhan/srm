@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>注册</title>
+
+
+    <style>
+
+        body{
+
+            background:#f5f6fa;
+
+            font-family:Arial;
+
+        }
+
+
+        .box{
+
+            width:350px;
+
+            margin:100px auto;
+
+            background:white;
+
+            padding:30px;
+
+            border-radius:10px;
+
+        }
+
+
+        input{
+
+            width:90%;
+
+            padding:8px;
+
+            margin:8px;
+
+        }
+
+
+        button{
+
+            padding:8px 20px;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="box">
+
+
+    <h2>
+        用户注册
+    </h2>
+
+
+    <input
+            id="username"
+            placeholder="用户名">
+
+
+    <br>
+
+
+    <input
+            id="password"
+            type="password"
+            placeholder="密码">
+
+
+    <br>
+
+
+    <button onclick="register()">
+
+        注册
+
+    </button>
+
+
+    <button onclick="location='/login'">
+
+        返回登录
+
+    </button>
+
+
+</div>
+
+
+
+<script>
+
+
+    function register(){
+
+
+        fetch(
+            "/auth/register",
+            {
+                method:"POST",
+                headers:{
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+
+                body:JSON.stringify({
+
+                    username:
+                    username.value,
+
+
+                    password:
+                    password.value
+
+
+                })
+            }
+
+        )
+            .then(
+                res=>res.json()
+            )
+
+            .then(
+                data=>{
+                    alert(
+                        data.message ||
+                        "注册成功"
+                    );
+                    location="/login";
+                }
+
+            );
+
+
+    }
+
+
+</script>
+
+
+</body>
+
+</html>

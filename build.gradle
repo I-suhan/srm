@@ -1,0 +1,73 @@
+plugins {
+    alias(libs.plugins.java)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+}
+
+group = 'com.ne'
+version = '0.0.1-SNAPSHOT'
+description = 'srm-project'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation libs.zxing.javase
+
+    // Tika
+    implementation libs.tika.core
+    implementation libs.tika.parsers
+
+    // POI
+    implementation libs.poi
+    implementation libs.poi.ooxml
+    implementation libs.poi.pdfbox
+
+    // Spring Boot
+    implementation libs.spring.boot.web
+    implementation libs.spring.boot.thymeleaf
+    implementation libs.spring.boot.jpa
+    implementation libs.spring.boot.jackson
+    implementation libs.spring.boot.validation
+    implementation libs.spring.boot.security
+
+    // jwt
+    implementation libs.jjwt.api
+    implementation libs.jjwt.impl
+    implementation libs.jjwt.json
+
+    // MySQL
+    runtimeOnly libs.mysql
+
+    //redis
+    implementation libs.redis
+    implementation libs.pool
+
+    // Lombok
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+
+    //hutool
+    implementation libs.hutool
+
+    //UUID
+    implementation libs.uuid.creator
+
+    // Devtools
+    developmentOnly libs.spring.boot.devtools
+
+    // Test
+    testImplementation libs.spring.boot.test
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

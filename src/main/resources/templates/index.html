@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>认证中心</title>
+
+    <style>
+
+        body{
+            font-family:
+                    Arial,
+                    sans-serif;
+
+            background:#f5f6fa;
+
+            padding:30px;
+        }
+
+
+        .box{
+
+            background:white;
+
+            width:600px;
+
+            margin:auto;
+
+            padding:25px;
+
+            border-radius:10px;
+
+            box-shadow:
+                    0 2px 10px #ddd;
+
+        }
+
+
+        h2{
+
+            color:#333;
+
+        }
+
+
+        button{
+
+            padding:8px 15px;
+
+            margin:5px;
+
+            cursor:pointer;
+
+        }
+
+
+        input{
+
+            padding:8px;
+
+            width:250px;
+
+            margin:5px;
+
+        }
+
+
+        .item{
+
+            margin:8px 0;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="box">
+
+
+    <h2>
+        认证中心
+    </h2>
+
+
+    <div class="item">
+        当前用户：
+
+        <span id="username">
+加载中...
+</span>
+
+    </div>
+
+
+    <div class="item">
+
+        角色：
+
+        <span id="roles">
+</span>
+
+    </div>
+
+
+
+    <div class="item">
+
+        权限：
+
+        <span id="permissions">
+</span>
+
+    </div>
+
+
+    <hr>
+
+
+    <h3>
+        修改资料
+    </h3>
+
+
+    <input id="usernameInput"
+           placeholder="用户名">
+
+
+    <button onclick="updateProfile()">
+        保存
+    </button>
+
+
+    <hr>
+
+
+    <h3>
+        修改密码
+    </h3>
+
+
+    <input
+            id="oldPassword"
+            type="password"
+            placeholder="旧密码">
+
+
+    <br>
+
+
+    <input
+            id="newPassword"
+            type="password"
+            placeholder="新密码">
+
+
+    <br>
+
+
+    <button onclick="changePassword()">
+        修改密码
+    </button>
+
+
+    <hr>
+
+
+    <button onclick="devicePage()">
+
+        设备管理
+
+    </button>
+
+
+    <button onclick="logout()">
+
+        退出登录
+
+    </button>
+
+
+
+</div>
+<script src="/js/auth.js"></script>
+
+
+<script>
+
+
+    // ================================
+    // 获取当前用户信息
+    // ================================
+    function loadUser() {
+
+        authRequest("/auth/me")
+            .then(res => {
+
+                // Token 无效 / 已过期
+                if (res.status === 401) {
+
+                    localStorage.removeItem("token");
+
+                    location.href = "/login";
+
+                    return null;
+                }
+
+                return res.json();
+            })
+            .then(result => {
+
+                if (!result) {
+                    return;
+                }
+
+                console.log("当前用户完整返回:", result);
+
+                // 后端 Result
+                if (result.code !== 200) {
+
+                    alert(
+                        result.message || "获取用户信息失败"
+                    );
+
+                    return;
+                }
+
+                // Result.data
+                const data = result.data;
+
+                if (!data) {
+
+                    console.error(
+                        "服务器没有返回用户数据:",
+                        result
+                    );
+
+                    return;
+                }
+
+                console.log("当前用户:", data);
+
+                // ================================
+                // 显示用户名
+                // ================================
+                username.innerText =
+                    data.username || "";
+
+                // ================================
+                // 显示角色
+                // ================================
+                roles.innerText =
+                    Array.isArray(data.roles)
+                        ? data.roles.join(", ")
+                        : "";
+
+                // ================================
+                // 显示权限
+                // ================================
+                permissions.innerText =
+                    Array.isArray(data.permissions)
+                        ? data.permissions.join(", ")
+                        : "";
+
+                // ================================
+                // 用户名输入框
+                // ================================
+                usernameInput.value =
+                    data.username || "";
+            })
+            .catch(err => {
+
+                console.error(
+                    "获取用户信息失败:",
+                    err
+                );
+
+            });
+    }
+
+
+    // ================================
+    // 修改资料
+    // ================================
+    function updateProfile() {
+
+        const newUsername =
+            usernameInput.value.trim();
+
+        if (!newUsername) {
+
+            alert("用户名不能为空");
+
+            return;
+        }
+
+        authRequest(
+            "/auth/profile",
+            {
+                method: "PUT",
+
+                body: JSON.stringify({
+                    username: newUsername
+                })
+            }
+        )
+            .then(res => {
+
+                // Token 过期
+                if (res.status === 401) {
+
+                    localStorage.removeItem("token");
+
+                    alert("登录已过期，请重新登录");
+
+                    location.href = "/login";
+
+                    return null;
+                }
+
+                return res.json();
+            })
+            .then(result => {
+
+                if (!result) {
+                    return;
+                }
+
+                console.log(
+                    "修改资料返回:",
+                    result
+                );
+
+                if (result.code === 200) {
+
+                    alert(
+                        result.message || "修改成功"
+                    );
+
+                    // 修改成功后重新获取用户信息
+                    loadUser();
+
+                } else {
+
+                    alert(
+                        result.message || "修改失败"
+                    );
+                }
+            })
+            .catch(err => {
+
+                console.error(
+                    "修改资料失败:",
+                    err
+                );
+
+                alert(
+                    "请求失败，请检查网络或服务器"
+                );
+            });
+    }
+
+
+    // ================================
+    // 修改密码
+    // ================================
+    function changePassword() {
+
+        const oldPwd =
+            document
+                .getElementById("oldPassword")
+                .value;
+
+        const newPwd =
+            document
+                .getElementById("newPassword")
+                .value;
+
+
+        // ================================
+        // 参数检查
+        // ================================
+        if (!oldPwd) {
+
+            alert("请输入旧密码");
+
+            return;
+        }
+
+
+        if (!newPwd) {
+
+            alert("请输入新密码");
+
+            return;
+        }
+
+
+        if (oldPwd === newPwd) {
+
+            alert("新密码不能和旧密码相同");
+
+            return;
+        }
+
+
+        // ================================
+        // 请求修改密码
+        // ================================
+        authRequest(
+            "/auth/password",
+            {
+                method: "PUT",
+
+                body: JSON.stringify({
+                    oldPassword: oldPwd,
+                    newPassword: newPwd
+                })
+            }
+        )
+            .then(res => {
+
+                // Token 过期
+                if (res.status === 401) {
+
+                    localStorage.removeItem("token");
+
+                    alert(
+                        "登录已过期，请重新登录"
+                    );
+
+                    location.href = "/login";
+
+                    return null;
+                }
+
+                return res.json();
+            })
+            .then(result => {
+
+                if (!result) {
+                    return;
+                }
+
+                console.log(
+                    "修改密码返回:",
+                    result
+                );
+
+                if (result.code === 200) {
+
+                    alert(
+                        result.message ||
+                        "密码修改成功，请重新登录"
+                    );
+
+                    // ================================
+                    // Header JWT 模式
+                    // 删除本地 Token
+                    // ================================
+                    localStorage.removeItem("token");
+
+                    // 清空密码输入框
+                    document
+                        .getElementById("oldPassword")
+                        .value = "";
+
+                    document
+                        .getElementById("newPassword")
+                        .value = "";
+
+                    // 返回登录页
+                    location.href = "/login";
+
+                } else {
+
+                    alert(
+                        result.message ||
+                        "密码修改失败"
+                    );
+                }
+            })
+            .catch(err => {
+
+                console.error(
+                    "修改密码失败:",
+                    err
+                );
+
+                alert(
+                    "请求失败，请检查网络或服务器"
+                );
+            });
+    }
+
+
+    // ================================
+    // 设备管理
+    // ================================
+    function devicePage() {
+
+        location.href = "/device";
+    }
+
+
+    // ================================
+    // 退出登录
+    // ================================
+    function logout() {
+
+        // 先删除 Token
+        // 防止退出接口本身出现异常时，
+        // 本地 Token 还继续存在
+        const token =
+            localStorage.getItem("token");
+
+        // 如果本地已经没有 Token，
+        // 直接回登录页
+        if (!token) {
+
+            location.href = "/login";
+
+            return;
+        }
+
+
+        authRequest(
+            "/auth/logout",
+            {
+                method: "POST"
+            }
+        )
+            .then(res => {
+
+                // 如果服务器返回 JSON，
+                // 尝试读取，但不影响最终退出
+                if (res.status === 401) {
+
+                    return null;
+                }
+
+                return res.json().catch(() => null);
+            })
+            .then(result => {
+
+                console.log(
+                    "退出登录返回:",
+                    result
+                );
+            })
+            .catch(err => {
+
+                console.error(
+                    "退出请求失败:",
+                    err
+                );
+            })
+            .finally(() => {
+
+                // ================================
+                // Header JWT 模式
+                // ================================
+                localStorage.removeItem("token");
+
+                // 返回登录页面
+                location.href = "/login";
+            });
+    }
+
+
+    // ================================
+    // 页面加载
+    // ================================
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            loadUser();
+
+        }
+    );
+
+
+</script>
+
+
+</body>
+
+</html>
