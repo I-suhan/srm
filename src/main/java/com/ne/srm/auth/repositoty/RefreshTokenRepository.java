@@ -22,23 +22,13 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken,Long>
     """)
     void revokeByUserId(Long userId);
 
-
-    @Modifying(clearAutomatically = true)
-    @Query("""
-        update RefreshToken rt
-        set rt.status='REVOKED' ,
-        rt.revokedTime=:revokeTime
-        where rt.userId=:userId and rt.status='ACTIVE'
-    """)
-    void revokeByUserid(Long userId, Instant revokeTime);
-
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
     @Modifying(clearAutomatically = true)
     @Query("""
         update RefreshToken rt
         set rt.status='REVOKED' ,
-        rt.revokedTime=:revokeTime
+        rt.revokedTime=:now
         where rt.sessionId=:sessionId and rt.status='ACTIVE'
     """)
     void revokeBySessionId(String sessionId, Instant now);

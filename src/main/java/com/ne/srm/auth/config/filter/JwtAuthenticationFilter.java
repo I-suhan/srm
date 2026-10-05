@@ -40,9 +40,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 
 
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+
+        String uri = request.getServletPath();
+
+        return uri.equals("/auth/login")
+                || uri.equals("/auth/register")
+                || uri.equals("/auth/refresh");
+    }
+
+
 
     @Override
     protected void doFilterInternal(@Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response, @Nonnull FilterChain filterChain) throws ServletException, IOException {
+
+        log.info("request link ::======>{}", request.getRequestURL().toString());
 
         if(SecurityContextHolder.getContext().getAuthentication() != null){
             log.info("空上下文");
@@ -105,11 +118,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
                 }catch (ExpiredJwtException e) {
+
                     log.debug("JWT expired");
+
                     tokenResolver.remove(response);
                     SecurityContextHolder.clearContext();
-                    throw new CredentialsExpiredException("Token 已过期", e);
 
+                    authenticationEntryPoint.commence(
+                            request,
+                            response,
+                            new CredentialsExpiredException("Token 已过期", e)
+                    );
+                    return;
                 } catch (JwtException e) {
                     log.warn("JWT validation failed: {}", e.getMessage());
                     tokenResolver.remove(response);

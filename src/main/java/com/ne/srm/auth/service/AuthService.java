@@ -13,6 +13,7 @@ import com.ne.srm.auth.repositoty.UserRoleRepository;
 import com.ne.srm.auth.util.IpUtils;
 import com.ne.srm.auth.vo.UserInfoVO;
 import com.ne.srm.auth.exception.AuthException;
+import com.ne.srm.core.dto.RedisLockToken;
 import com.ne.srm.core.service.RedisService;
 import com.ne.srm.core.utils.CryptoUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -114,7 +115,7 @@ public class AuthService {
 
         return LoginResponse.builder()
                 .accessToken(accessTokenStr)
-                .refreshToken(refreshTokenStr)
+                .refreshToken(refreshToken.getTokenHash())
                 .tokenType(securityProperties.getTokenMode())
                 .expiresIn(securityProperties.getJwt().getAccessExpire())
                 .refreshExpiresIn(securityProperties.getJwt().getRefreshExpire())
@@ -185,71 +186,128 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    public LoginResponse refresh(String refreshTokenStr, HttpServletRequest request){
-        // 锚定业务时间
-        Instant now = Instant.now();
+    public LoginResponse refresh(String oldRefreshTokenStr){
 
-        String oldHash = CryptoUtil.sha256(refreshTokenStr);
+        String oldHash = CryptoUtil.sha256(oldRefreshTokenStr);
 
-        RefreshToken refreshToken = refreshTokenService.findByHash(oldHash);
+        String lockKey = "refresh:lock:" + oldHash;
+        String rotationKey = "refresh:rotation:" + oldHash;
 
-        if(refreshToken == null){
-            throw new RuntimeException("refresh_token 数据异常");
+        //防抖
+        LoginResponse cached = redisService.getObject(rotationKey, LoginResponse.class);
+        if (cached != null) {
+            return cached;
         }
 
-        if(!refreshToken.isUsable()){
-            refreshToken.setStatus(RefreshTokenStatus.COMPROMISED);
-            refreshTokenService.update(refreshToken, now);
-            log.warn("refreshToken : {}", refreshTokenStr);
-            throw new RuntimeException("重放攻击，令牌泄露！");
-        }
-
-        UserSession session = userSessionsService.findBySessionId(refreshToken.getSessionId());
-        if(session == null || !session.isValid()){
-            throw new RuntimeException("会话已失效");
-        }
-        if(session.isExpired(now)
-                || now.isAfter(session.getLastActiveTime().plusMillis(securityProperties.getJwt().getSessionTimeout()))){
-            session.setStatus(SessionStatus.EXPIRED);
-            userSessionsService.update(session);
-            throw new RuntimeException("登录已过期");
-        }
-
-        User user = userService.findById(session.getUserId());
-        if(user.getStatus() != 1) {
-            throw new RuntimeException("用户已被冻结");
-        }
-
-        //刷新会话
-        session.setRefreshedTime(now);
-        session.setLastActiveTime(now);
-        session = userSessionsService.update(session);
-
-        //更新refresh_token
-        refreshTokenStr = UuidCreator.getRandomBased().toString();
-        refreshToken = refreshTokenService.refresh(oldHash, refreshTokenStr, now);
-
-
-        /* 生成新的 access_token*/
-        String newAccessToken = jwtService.createAccessToken(
-                user.getId(),
-                jwtService.generateJti(now),
-                session.getSessionId(),
-                user.getTokenVersion(),
-                now
+        //抢锁
+        RedisLockToken locked = redisService.tryLock(
+                lockKey,
+                Duration.ofSeconds(5)
         );
 
-        UserInfoVO userInfo = user.convertVO();
-        Collection<String> permissions = permissionService.getPermissions(user);
+        if (locked == null) {
 
-        return LoginResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(refreshTokenStr)
-                .tokenType(securityProperties.getTokenMode())
-                .expiresIn(securityProperties.getJwt().getAccessExpire())
-                .refreshExpiresIn(securityProperties.getJwt().getRefreshExpire())
-                .userInfo(userInfo)
-                .permissions(permissions).build();
+            LoginResponse rotationResult = waitForRotationResult(
+                    rotationKey,
+                    Duration.ofMillis(500)
+            );
+
+            if (rotationResult != null) {
+                return rotationResult;
+            }
+            throw new RuntimeException("刷新繁忙，请稍后重试");
+        }
+
+        try {
+            /*
+             * ④ 再检查一次 Grace Window
+             *
+             * 防止：
+             *
+             * A 抢锁
+             * B 没抢到锁
+             * A 刚好完成 rotation
+             * B 此时才进来
+             */
+            LoginResponse cachedAgain =
+                    redisService.getObject(
+                            rotationKey,
+                            LoginResponse.class
+                    );
+
+            if (cachedAgain != null) {
+                return cachedAgain;
+            }
+
+            RefreshToken refreshToken = refreshTokenService.findByHash(oldHash);
+
+            if(refreshToken == null){
+                throw new RuntimeException("refresh_token 数据异常");
+            }
+
+            // 锚定业务时间
+            Instant now = Instant.now();
+
+            if(!refreshToken.isUsable()){
+                refreshToken.setStatus(RefreshTokenStatus.COMPROMISED);
+                refreshTokenService.update(refreshToken, now);
+                log.warn("refreshToken : {}", oldRefreshTokenStr);
+                log.warn("refresh token replay detected, sessionId={}", refreshToken.getSessionId());
+                throw new RuntimeException("重放攻击，令牌泄露！");
+            }
+
+            UserSession session = userSessionsService.findBySessionId(refreshToken.getSessionId());
+            if(session == null || !session.isValid()){
+                throw new RuntimeException("会话已失效");
+            }
+            if(session.isExpired(now)
+                    || now.isAfter(session.getLastActiveTime().plusMillis(securityProperties.getJwt().getSessionTimeout()))){
+                session.setStatus(SessionStatus.EXPIRED);
+                userSessionsService.update(session);
+                throw new RuntimeException("登录已过期");
+            }
+
+            User user = userService.findById(session.getUserId());
+            if(user.getStatus() != 1) {
+                throw new RuntimeException("用户已被冻结");
+            }
+
+            //刷新会话
+            session.setRefreshedTime(now);
+            session.setLastActiveTime(now);
+            session = userSessionsService.update(session);
+
+            //更新refresh_token
+            String newRefreshTokenStr = UuidCreator.getRandomBased().toString();
+            refreshToken = refreshTokenService.refresh(oldHash, newRefreshTokenStr, now);
+
+
+            /* 生成新的 access_token*/
+            String newAccessToken = jwtService.createAccessToken(
+                    user.getId(),
+                    jwtService.generateJti(now),
+                    session.getSessionId(),
+                    user.getTokenVersion(),
+                    now
+            );
+
+            UserInfoVO userInfo = user.convertVO();
+            Collection<String> permissions = permissionService.getPermissions(user);
+
+            LoginResponse build = LoginResponse.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(newRefreshTokenStr)
+                    .tokenType(securityProperties.getTokenMode())
+                    .expiresIn(securityProperties.getJwt().getAccessExpire())
+                    .refreshExpiresIn(securityProperties.getJwt().getRefreshExpire())
+                    .userInfo(userInfo)
+                    .permissions(permissions).build();
+            redisService.setObject(rotationKey, build, Duration.ofSeconds(2));
+            return build;
+
+        }finally {
+            redisService.unlock(locked);
+        }
     }
 
     public void changePassword(PasswordRequest request){
@@ -282,5 +340,37 @@ public class AuthService {
                 user.getTokenVersion().toString(),
                 Duration.ofMillis(securityProperties.getJwt().getRefreshExpire()).plusDays(1));
 
+    }
+
+    private LoginResponse waitForRotationResult(
+            String rotationKey,
+            Duration timeout
+    ) {
+
+        long deadline =
+                System.currentTimeMillis()
+                        + timeout.toMillis();
+
+        while (System.currentTimeMillis() < deadline) {
+
+            LoginResponse result =
+                    redisService.getObject(
+                            rotationKey,
+                            LoginResponse.class
+                    );
+
+            if (result != null) {
+                return result;
+            }
+
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        }
+
+        return null;
     }
 }

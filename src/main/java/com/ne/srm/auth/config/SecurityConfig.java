@@ -47,6 +47,7 @@ public class SecurityConfig {
                     .ignoringRequestMatchers(
                             "/auth/login",
                             "/auth/logout"
+
                     )
             );
 
@@ -60,9 +61,7 @@ public class SecurityConfig {
             */
             .sessionManagement(
                     session -> session.sessionCreationPolicy(STATELESS)
-            ).exceptionHandling(exception -> {
-                exception.authenticationEntryPoint(authenticationEntryPoint);
-                })
+            )
                 /*
                  * 请求权限规则
                  */
@@ -99,6 +98,7 @@ public class SecurityConfig {
                     e -> e
                             .authenticationEntryPoint(unauthorizedHandler)
                             .accessDeniedHandler(forbiddenHandler)
+                            .authenticationEntryPoint(authenticationEntryPoint)
             );
         return http.build();
     }

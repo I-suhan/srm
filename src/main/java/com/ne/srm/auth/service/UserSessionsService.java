@@ -46,7 +46,7 @@ public class UserSessionsService {
         session.setUserAgent(servletRequest.getHeader("User-Agent"));
         session.setStatus(SessionStatus.ACTIVE);
         session.setCreatedTime(now);
-        session.setExpiredTime(now.minusMillis(securityProperties.getJwt().getSessionExpire()));
+        session.setExpiredTime(now.plusMillis(securityProperties.getJwt().getSessionExpire()));
         session.setLastActiveTime(now);
         session.setRefreshedTime(now);
 

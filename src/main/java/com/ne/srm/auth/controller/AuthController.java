@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ne.srm.auth.config.SecurityProperties;
 import com.ne.srm.auth.config.resolver.TokenResolver;
 import com.ne.srm.auth.dto.*;
+import com.ne.srm.auth.entity.SecurityUser;
 import com.ne.srm.auth.service.AuthService;
+import com.ne.srm.auth.service.JwtService;
 import com.ne.srm.auth.util.CookieUtil;
 import com.ne.srm.common.module.Result;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,24 +24,29 @@ public class AuthController {
     private final CookieUtil cookieUtil;
     private final SecurityProperties properties;
     private final TokenResolver tokenResolver;
+    private final JwtService jwtService;
 
-    public AuthController(AuthService authService, CookieUtil cookieUtil, SecurityProperties properties, TokenResolver tokenResolver) {
+    public AuthController(AuthService authService, CookieUtil cookieUtil, SecurityProperties properties, TokenResolver tokenResolver, JwtService jwtService) {
         this.authService = authService;
         this.cookieUtil = cookieUtil;
         this.properties = properties;
         this.tokenResolver = tokenResolver;
+        this.jwtService = jwtService;
     }
 
     @GetMapping("/me")
-    public UserInfoResponse me(){
+    public Result me(){
+        SecurityUser principal = (SecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("个人基础信息------------{}", principal.getUsername());
 
         UserInfoResponse me = authService.me();
-        return me;
+        return Result.ok(me);
 
     }
 
     @PostMapping("/login")
     public Result login(@RequestBody LoginRequest req, HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws JsonProcessingException {
+        log.info("登录----{}", req.username());
         LoginResponse result = authService.login(req, servletRequest);
 
         log.info("refresh-token-Login: {}", result.getRefreshToken());
@@ -54,12 +61,13 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public void logout(HttpServletRequest request, HttpServletResponse response){
+    public Result logout(HttpServletRequest request, HttpServletResponse response){
         authService.logout(request);
         SecurityContextHolder.clearContext();
         if("cookie".equalsIgnoreCase(properties.getTokenMode())){
             tokenResolver.remove(response);
         }
+        return Result.ok();
     }
 
     @PostMapping("/register")
@@ -83,9 +91,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public Result refresh(HttpServletRequest request, HttpServletResponse response) throws JsonProcessingException {
+    public Result refresh(HttpServletRequest request, HttpServletResponse response,@RequestParam String refreshToken){
 
-        LoginResponse loginResponse = authService.refresh(cookieUtil.getRefreshToken(request), request);
+        LoginResponse loginResponse = authService.refresh(refreshToken);
 
         /*
          * Cookie模式

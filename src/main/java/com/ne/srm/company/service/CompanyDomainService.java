@@ -1,4 +1,4 @@
-package com.ne.srm.company.service.domain;
+package com.ne.srm.company.service;
 
 import com.ne.srm.company.repositoty.CompanyRepository;
 import com.ne.srm.company.repositoty.ContacterRepository;

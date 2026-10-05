@@ -8,8 +8,8 @@ security:
   jwt:
     secret-key: auth-framework-secret-key-2026-demo
     # access存活时间60分钟，死亡前十分钟刷新 refresh存活时间7天，死亡前5小时刷新
-    access-expire: 3600000
-    access-remain-time: 300000
+    access-expire: 1000000
+    access-remain-time: 70000
     refresh-expire: 604800000
     refresh-remain-time: 18000000
     lock-timeout: 5s          # 分布式锁持有时间（秒）

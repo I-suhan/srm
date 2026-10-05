@@ -11,8 +11,10 @@ import java.util.Optional;
 @Repository
 public interface InquiryRepository extends BaseRepository<InquiryEntity, Long> {
 
-    Optional<InquiryEntity> findByInquiryNo(String inquiryNo);
+    List<InquiryEntity> findByInquiryNo(String inquiryNo);
 
     List<InquiryEntity> findByStatusCode(int statusCode);
+
+    List<String> findAllInquiryNo();
 
 }
