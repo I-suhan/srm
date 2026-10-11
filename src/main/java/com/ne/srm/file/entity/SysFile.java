@@ -1,6 +1,8 @@
 package com.ne.srm.file.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Data;
 
@@ -9,6 +11,7 @@ import lombok.Data;
 public class SysFile {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String fileName;//文件名
     private String filePath;//文件路径

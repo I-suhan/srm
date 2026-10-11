@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 public class InquiryEntity extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String inquiryNo;
@@ -47,7 +48,7 @@ public class InquiryEntity extends BaseEntity {
 
     private Double actualExtra;//实际加点
 
-    private InvoiceType type;//专普票
+    private InvoiceType invoice_type;//专普票
 
     //装柜类型
     @ManyToOne

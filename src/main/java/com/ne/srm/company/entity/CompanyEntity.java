@@ -41,8 +41,8 @@ public class CompanyEntity extends BaseEntity {
 
     private Boolean exportLicense;
 
-    private String aliName;
+    private String shopName;
 
-    private String aliContact;
+    private String shopContact;
 
 }

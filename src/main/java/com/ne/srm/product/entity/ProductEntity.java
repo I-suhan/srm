@@ -13,13 +13,11 @@ public class ProductEntity {
 
     private String sku;
     private String photo;
+
     private String namePl;
-    private String nameEn;
     private String nameZh;
 
-
     private String descriptionPl;
-    private String descriptionEn;
     private String descriptionZh;
 
     private String color;

@@ -23,3 +23,8 @@ redis:
   prefix: srm
   trusted-packages:
     com.ne.srm
+translation:
+  libretranslate:
+    # 可配置自建或托管的 LibreTranslate 服务地址；未配置时使用空实现。
+    base-url: ${TRANSLATION_BASE_URL:}
+    api-key: ${TRANSLATION_API_KEY:}

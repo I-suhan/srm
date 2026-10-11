@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 public class ContractEntity extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String contractNo;

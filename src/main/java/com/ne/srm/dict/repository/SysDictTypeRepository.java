@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface SysDictTypeRepository extends BaseRepository<SysDictType, Long> {
+public interface SysDictTypeRepository extends BaseRepository<SysDictType, Integer> {
 
     Optional<SysDictType> findByDictCode(String dictCode);
 

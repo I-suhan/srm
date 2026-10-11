@@ -18,7 +18,9 @@ public class InquiryHistory {
     @JoinColumn(name = "inquiry_id")
     private InquiryEntity inquiry;
 
-    private String aliName;
+    //联系方式
+    private String shopName;
+    private String shopContact;
 
     //出厂价
     private BigDecimal exwPrice;

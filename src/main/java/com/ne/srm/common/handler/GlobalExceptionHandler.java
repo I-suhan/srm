@@ -2,12 +2,18 @@ package com.ne.srm.common.handler;
 
 import com.ne.srm.auth.exception.AuthException;
 import com.ne.srm.common.module.Result;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Result> notFound(EntityNotFoundException e) {
+        return ResponseEntity.status(404).body(Result.error(404, "NOT_FOUND", e.getMessage()));
+    }
 
     /**
      * 认证业务异常

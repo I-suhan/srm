@@ -14,4 +14,7 @@ public interface OrderRepository extends BaseRepository<OrderEntity, Long> {
 
     List<OrderEntity> findByStatusCode(String statusCode);
 
+    /** 按询价记录主键查询关联订单。 */
+    List<OrderEntity> findByInquiry_Id(Long inquiryId);
+
 }

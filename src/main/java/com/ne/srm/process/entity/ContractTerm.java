@@ -12,6 +12,7 @@ import static com.ne.srm.common.constant.BizConstant.DEFAULT_TERM;
 public class ContractTerm {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String term;

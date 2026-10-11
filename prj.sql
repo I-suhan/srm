@@ -51,18 +51,16 @@ CREATE TABLE product
 (
     id             BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
     sku            VARCHAR(100) UNIQUE COMMENT '产品SKU',
-    name_zh        VARCHAR(255) COMMENT '中文名称',
-    name_en        VARCHAR(255) COMMENT '英文名称',
-    name_pl        VARCHAR(255) COMMENT '波兰语名称',
-    description_zh TEXT COMMENT '中文描述',
-    description_en TEXT COMMENT '英文描述',
-    description_pl TEXT COMMENT '波兰语描述',
+    name_zh        VARCHAR(255) COMMENT '翻译名称',
+    name_pl        VARCHAR(255) COMMENT '原文名称',
+    description_zh TEXT COMMENT '翻译描述',
+    description_pl TEXT COMMENT '原文描述',
     color          VARCHAR(100) COMMENT '颜色',
     need_ce        TINYINT DEFAULT 0 COMMENT '是否需要CE认证',
     manuals        TINYINT DEFAULT 0 COMMENT '是否有说明书',
     stickers       TINYINT DEFAULT 0 COMMENT '是否有贴纸'
 ) COMMENT ='产品表';
-CREATE TABLE inquiry
+CREATE TABLE inquiry_entity
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
     inquiry_no       VARCHAR(50) UNIQUE COMMENT '询盘编号',
@@ -88,6 +86,24 @@ CREATE TABLE inquiry
     updated_time     BIGINT DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     FOREIGN KEY (product_id) REFERENCES product (id)
 ) COMMENT ='询盘表（供应商报价阶段数据）';
+CREATE TABLE `inquiry_history` (
+                                   `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+
+                                   `shop_name` varchar(255) DEFAULT NULL,
+                                   `shop_contact` varchar(255) DEFAULT NULL,
+                                   `created_by` varchar(255) DEFAULT NULL,
+                                   `created_time` bigint DEFAULT NULL,
+                                   `exw_price` decimal(38,2) DEFAULT NULL,
+                                   `logo_price` decimal(38,2) DEFAULT NULL,
+                                   `shipping_price` decimal(38,2) DEFAULT NULL,
+                                   `actual_extra` double DEFAULT NULL,
+                                   `invoice_extra` double DEFAULT NULL,
+                                   `type` tinyint DEFAULT NULL,
+                                   `inquiry_quantity` int DEFAULT NULL,
+                                   `version` int NOT NULL,
+                                   `inquiry_id` bigint DEFAULT NULL,
+                                   FOREIGN KEY (`inquiry_id`) REFERENCES `inquiry_entity` (`id`)
+)COMMENT ='询盘历史存档表';
 CREATE TABLE order_entity
 (
     id           BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
